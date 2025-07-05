@@ -4,7 +4,6 @@ const SpotifyWebApi = require('spotify-web-api-node');
 const statistics = require('simple-statistics');
 
 async function analyzeSession(api) {
-  // This helper function remains the same
   const data = await api.getMyRecentlyPlayedTracks({ limit: 20 });
   if (!data.body.items || data.body.items.length === 0) {
     throw new Error('No recent tracks found.');
@@ -30,58 +29,54 @@ async function analyzeSession(api) {
   return { mood: moodDescription, valence: avgValence.toFixed(2), energy: avgEnergy.toFixed(2) };
 }
 
-// Use module.exports instead of export default
 module.exports = async function handler(req, res) {
-  console.log("--- /api/callback function invoked ---");
+  console.log("--- /api/callback invoked ---");
 
-  if (!process.env.VITE_SPOTIFY_CLIENT_ID || !process.env.SPOTIFY_CLIENT_SECRET || !process.env.VERCEL_URL) {
+  const vercelUrl = process.env.VERCEL_URL;
+  const frontendUrl = `https://${vercelUrl}`;
+  const redirectUri = `${frontendUrl}/api/callback`;
+  
+  if (!process.env.VITE_SPOTIFY_CLIENT_ID || !process.env.SPOTIFY_CLIENT_SECRET || !vercelUrl) {
     console.error("CRITICAL: Missing environment variables.");
-    return res.status(500).send("Server configuration error.");
+    return res.status(500).send("Server configuration error. Admin has been notified.");
   }
 
   const { code, error } = req.query;
-  const frontendUrl = `https://${process.env.VERCEL_URL.replace(/^https?:\/\//, '')}`;
 
   if (error) {
-    console.error("Error received from Spotify:", error);
+    console.error("Error received directly from Spotify:", error);
     return res.redirect(`${frontendUrl}?error=${encodeURIComponent('Spotify denied the request.')}`);
   }
-
-  if (!code) {
-    console.error("No code received from Spotify.");
-    return res.redirect(`${frontendUrl}?error=${encodeURIComponent('Authentication code was missing.')}`);
-  }
   
-  console.log("Received authorization code successfully.");
-
   const spotifyApi = new SpotifyWebApi({
     clientId: process.env.VITE_SPOTIFY_CLIENT_ID,
     clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
-    redirectUri: `${frontendUrl}/api/callback`,
+    redirectUri: redirectUri,
   });
 
   try {
-    console.log("Attempting to exchange code for tokens...");
+    console.log("Exchanging code for tokens with redirect URI:", redirectUri);
     const data = await spotifyApi.authorizationCodeGrant(code);
-    console.log("Successfully exchanged code for tokens.");
+    console.log("Token exchange successful.");
 
     spotifyApi.setAccessToken(data.body['access_token']);
     spotifyApi.setRefreshToken(data.body['refresh_token']);
-    console.log("Access token has been set.");
-
+    
     const result = await analyzeSession(spotifyApi);
-    console.log("Analysis complete. Redirecting to frontend with result:", result);
-
+    console.log("Analysis complete. Redirecting with result:", result);
+    
     const query = new URLSearchParams(result).toString();
     res.redirect(`${frontendUrl}?${query}`);
 
   } catch (err) {
-    console.error("!!! CRASH POINT !!! An error occurred in the try block.");
-    console.error("Full Error:", err);
-    if (err.body && err.body.error_description) {
-        console.error("Spotify Error Description:", err.body.error_description);
+    console.error("!!! CRASH POINT !!!");
+    if (err.body) {
+      console.error("Spotify API Error Body:", err.body);
+    } else {
+      console.error("Full Error Object:", err);
     }
-    const query = new URLSearchParams({ error: 'An internal error occurred during Spotify authentication.' }).toString();
+    const errorMessage = err.body?.error_description || 'An internal error occurred.';
+    const query = new URLSearchParams({ error: errorMessage }).toString();
     res.redirect(`${frontendUrl}?${query}`);
   }
 };
