@@ -1,11 +1,11 @@
 import React from 'react';
 import { Radar } from 'react-chartjs-2';
 import { Chart, RadialLinearScale, PointElement, LineElement, Filler, Tooltip } from 'chart.js';
-import './ResultsView.css'; 
+import './ResultsView.css';
 
 Chart.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip);
 
-const ResultsView = ({ analysis, onTryAgain }) => {
+const ResultsView = ({ analysis, error, onTryAgain }) => {
   const chartData = {
     labels: ['Positivity (Valence)', 'Intensity (Energy)'],
     datasets: [{
@@ -27,7 +27,7 @@ const ResultsView = ({ analysis, onTryAgain }) => {
       r: {
         angleLines: { color: 'rgba(255, 255, 255, 0.2)' },
         grid: { color: 'rgba(255, 255, 255, 0.2)' },
-        pointLabels: { color: '#ffffff', font: { size: 14 } },
+        pointLabels: { display: !error, color: '#ffffff', font: { size: 14 } },
         ticks: { display: false, stepSize: 0.25 },
         min: 0,
         max: 1
@@ -39,13 +39,21 @@ const ResultsView = ({ analysis, onTryAgain }) => {
   return (
     <div className="results-view">
       <div className="card">
-        <h1>Recent Listening Analysis</h1>
-        <p>Predominant Mood Profile:</p>
-        <strong>{analysis.moodDescription}</strong>
-        <div className="chart-container">
-          <Radar data={chartData} options={chartOptions} />
-        </div>
-        <button className="try-again-button" onClick={onTryAgain}>Analyze Again</button>
+        <h1>{error ? "Oops!" : "Recent Listening Analysis"}</h1>
+        {error ? (
+          <p className="error-message">{error}</p>
+        ) : (
+          <>
+            <p>Predominant Mood Profile:</p>
+            <strong>{analysis.moodDescription}</strong>
+            <div className="chart-container">
+              <Radar data={chartData} options={chartOptions} />
+            </div>
+          </>
+        )}
+        <button className="try-again-button" onClick={onTryAgain}>
+          {error ? "Try Again" : "Analyze Again"}
+        </button>
       </div>
     </div>
   );
