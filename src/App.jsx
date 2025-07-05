@@ -1,44 +1,39 @@
 import React, { useState, useEffect } from 'react';
 import LoginView from './components/LoginView';
 import ResultsView from './components/ResultsView';
-import Callback from './components/Callback';
 
 function App() {
-  const [route, setRoute] = useState(window.location.pathname);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [authError, setAuthError] = useState(null);
 
   useEffect(() => {
-    const handlePopState = () => setRoute(window.location.pathname);
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+  
+    const params = new URLSearchParams(window.location.search);
+    const error = params.get('error');
+    const mood = params.get('mood');
+    const valence = params.get('valence');
+    const energy = params.get('energy');
 
-  const onAnalysisComplete = (result, error) => {
     if (error) {
       setAuthError(error);
-      setAnalysisResult(null);
-    } else {
-      setAnalysisResult(result);
-      setAuthError(null);
+    } else if (mood && valence && energy) {
+      setAnalysisResult({
+        moodDescription: mood,
+        avgValence: parseFloat(valence),
+        avgEnergy: parseFloat(energy),
+      });
     }
+    
   
-    window.history.pushState({}, '', '/');
-    setRoute('/');
-  };
+    window.history.replaceState({}, document.title, "/");
+
+  }, []);
 
   const handleTryAgain = () => {
     setAnalysisResult(null);
     setAuthError(null);
-    setRoute('/'); 
-  
   };
 
-  
-  if (route === '/callback') {
-    return <Callback onComplete={onAnalysisComplete} />;
-  }
-  
   if (analysisResult) {
     return <ResultsView analysis={analysisResult} onTryAgain={handleTryAgain} />;
   }
