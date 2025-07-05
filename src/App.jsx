@@ -1,35 +1,44 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React, { useState } from 'react';
+import LoginView from './components/LoginView';
+import ResultsView from './components/ResultsView';
+
+const mockDataScenarios = [
+  { moodDescription: "Energetic & Joyful", avgValence: 0.82, avgEnergy: 0.76 },
+  { moodDescription: "Somber & Introspective", avgValence: 0.21, avgEnergy: 0.33 },
+  { moodDescription: "Tense & Agitated", avgValence: 0.35, avgEnergy: 0.81 },
+  { moodDescription: "Calm & Serene", avgValence: 0.75, avgEnergy: 0.25 }
+];
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [analysisResult, setAnalysisResult] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
+  const handleLogin = () => {
+    setIsLoading(true);
+    
+
+    setTimeout(() => {
+  
+      const randomScenario = mockDataScenarios[Math.floor(Math.random() * mockDataScenarios.length)];
+      setAnalysisResult(randomScenario);
+      setIsLoading(false);
+    }, 1500);
+  };
+
+  const handleTryAgain = () => {
+   
+    handleLogin();
+  };
+  
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div className="App">
+      {!analysisResult ? (
+        <LoginView onLogin={Object.assign(handleLogin, { loading: isLoading })} />
+      ) : (
+        <ResultsView analysis={analysisResult} onTryAgain={handleTryAgain} />
+      )}
+    </div>
+  );
 }
 
-export default App
+export default App;
