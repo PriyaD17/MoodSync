@@ -1,44 +1,59 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import LoginView from './components/LoginView';
 import ResultsView from './components/ResultsView';
-
-const mockDataScenarios = [
-  { moodDescription: "Energetic & Joyful", avgValence: 0.82, avgEnergy: 0.76 },
-  { moodDescription: "Somber & Introspective", avgValence: 0.21, avgEnergy: 0.33 },
-  { moodDescription: "Tense & Agitated", avgValence: 0.35, avgEnergy: 0.81 },
-  { moodDescription: "Calm & Serene", avgValence: 0.75, avgEnergy: 0.25 }
-];
+import Callback from './components/Callback';
 
 function App() {
+  const [route, setRoute] = useState(window.location.pathname);
   const [analysisResult, setAnalysisResult] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [authError, setAuthError] = useState(null);
 
-  const handleLogin = () => {
-    setIsLoading(true);
-    
+  useEffect(() => {
+    const handlePopState = () => setRoute(window.location.pathname);
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
-    setTimeout(() => {
+  const onAnalysisComplete = (result, error) => {
+    if (error) {
+      setAuthError(error);
+      setAnalysisResult(null);
+    } else {
+      setAnalysisResult(result);
+      setAuthError(null);
+    }
   
-      const randomScenario = mockDataScenarios[Math.floor(Math.random() * mockDataScenarios.length)];
-      setAnalysisResult(randomScenario);
-      setIsLoading(false);
-    }, 1500);
+    window.history.pushState({}, '', '/');
+    setRoute('/');
   };
 
   const handleTryAgain = () => {
-   
-    handleLogin();
-  };
+    setAnalysisResult(null);
+    setAuthError(null);
+    setRoute('/'); 
   
-  return (
-    <div className="App">
-      {!analysisResult ? (
-        <LoginView onLogin={Object.assign(handleLogin, { loading: isLoading })} />
-      ) : (
-        <ResultsView analysis={analysisResult} onTryAgain={handleTryAgain} />
-      )}
-    </div>
-  );
+  };
+
+  
+  if (route === '/callback') {
+    return <Callback onComplete={onAnalysisComplete} />;
+  }
+  
+  if (analysisResult) {
+    return <ResultsView analysis={analysisResult} onTryAgain={handleTryAgain} />;
+  }
+
+  if (authError) {
+    return (
+      <ResultsView 
+        analysis={{ moodDescription: "Authentication Failed", avgValence: 0, avgEnergy: 0 }} 
+        error={authError}
+        onTryAgain={handleTryAgain} 
+      />
+    );
+  }
+
+  return <LoginView />;
 }
 
 export default App;
