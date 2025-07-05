@@ -2,7 +2,7 @@ import React from 'react';
 import './LoginView.css';
 
 const CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID; 
-const REDIRECT_URI = "https://your-vercel-app-name.vercel.app/callback"; 
+const REDIRECT_URI = "https://mood-sync-three.vercel.app/callback"; 
 const SCOPES = ['user-read-recently-played'];
 
 const SPOTIFY_AUTHORIZE_URL = `https://accounts.spotify.com/authorize?response_type=code&client_id=${CLIENT_ID}&scope=${SCOPES.join('%20')}&redirect_uri=${REDIRECT_URI}`;
