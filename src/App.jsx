@@ -1,54 +1,47 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import LoginView from './components/LoginView';
 import ResultsView from './components/ResultsView';
+import Callback from './components/Callback';
 
 function App() {
+  const [page, setPage] = useState(window.location.pathname);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [authError, setAuthError] = useState(null);
 
-  useEffect(() => {
-  
-    const params = new URLSearchParams(window.location.search);
-    const error = params.get('error');
-    const mood = params.get('mood');
-    const valence = params.get('valence');
-    const energy = params.get('energy');
-
+  const handleAuthComplete = (result, error) => {
     if (error) {
       setAuthError(error);
-    } else if (mood && valence && energy) {
-      setAnalysisResult({
-        moodDescription: mood,
-        avgValence: parseFloat(valence),
-        avgEnergy: parseFloat(energy),
-      });
+    } else {
+      setAnalysisResult(result);
     }
-    
+    window.history.pushState({}, '', '/');
+    setPage('/');
+  };
   
-    window.history.replaceState({}, document.title, "/");
-
-  }, []);
-
   const handleTryAgain = () => {
     setAnalysisResult(null);
     setAuthError(null);
   };
-
-  if (analysisResult) {
-    return <ResultsView analysis={analysisResult} onTryAgain={handleTryAgain} />;
+  
+  // Basic router
+  let Component;
+  switch (page) {
+    case '/callback':
+      Component = <Callback onAuthComplete={handleAuthComplete} />;
+      break;
+    default:
+      if (analysisResult) {
+        Component = <ResultsView analysis={analysisResult} onTryAgain={handleTryAgain} />;
+      } else if (authError) {
+        Component = <ResultsView analysis={{}} error={authError} onTryAgain={handleTryAgain} />;
+      } else {
+        Component = <LoginView />;
+      }
+      break;
   }
 
-  if (authError) {
-    return (
-      <ResultsView 
-        analysis={{ moodDescription: "Authentication Failed", avgValence: 0, avgEnergy: 0 }} 
-        error={authError}
-        onTryAgain={handleTryAgain} 
-      />
-    );
-  }
-
-  return <LoginView />;
+  return <div className="App">{Component}</div>;
 }
 
 export default App;
