@@ -1,4 +1,4 @@
-// api/exchangeToken.cjs --- FINAL ROBUST VERSION
+
 
 const SpotifyWebApi = require('spotify-web-api-node');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
@@ -9,13 +9,31 @@ async function analyzeSessionWithAI(tracks) {
   }
   const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
   const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash"});
-  const trackList = tracks.map(item => `- ${item.track.artists[0].name} - ${item.track.name}`).join('\n');
+
+  // --- ROBUST DATA FORMATTING ---
+  // 1. Filter out any null tracks or tracks without a name.
+  // 2. Use optional chaining (?.) to prevent crashes if an artist is missing.
+  const formattedTracks = tracks
+    .filter(item => item?.track?.name) 
+    .map(item => `- ${item.track.artists[0]?.name || 'Unknown Artist'} - ${item.track.name}`)
+    .join('\n');
+  
+  if (!formattedTracks) {
+    // If all tracks were filtered out, we can't analyze anything.
+    return {
+      overallMood: "Silent Session",
+      shortDescription: "It looks like you haven't played any tracks with recognizable names recently.",
+      keywords: ["silent", "empty", "quiet"]
+    };
+  }
+  
+  // Design the prompt using the safely formatted track list
   const prompt = `
     You are an expert music analyst specializing in emotional sentiment.
     Based on the following list of recently played Spotify tracks, analyze the overall mood and feeling of the listening session.
 
     Track List:
-    ${trackList}
+    ${formattedTracks}
 
     Provide your analysis ONLY in a raw JSON object format, with no extra text or markdown.
     The JSON object must have these exact keys: "overallMood", "shortDescription", and "keywords".
@@ -23,11 +41,13 @@ async function analyzeSessionWithAI(tracks) {
     - "shortDescription": A one-sentence, engaging description of the vibe.
     - "keywords": An array of 3-5 relevant lowercase keyword strings (e.g., ["chill", "focus", "late night"]).
   `;
+
   try {
     const result = await model.generateContent(prompt);
     const response = await result.response;
     let text = response.text().replace(/```json/g, '').replace(/```/g, '').trim();
     const analysis = JSON.parse(text);
+    
     if (!analysis.overallMood || !analysis.shortDescription || !analysis.keywords) {
       throw new Error("AI response was missing required keys.");
     }
@@ -38,12 +58,9 @@ async function analyzeSessionWithAI(tracks) {
   }
 }
 
+// --- Main Handler ---
+// This part remains the same, but is included for completeness.
 module.exports = async (req, res) => {
-  if (!process.env.GOOGLE_API_KEY) {
-    console.error("CRITICAL: GOOGLE_API_KEY environment variable is not set!");
-    return res.status(500).json({ error: "Server is missing the Google API Key configuration." });
-  }
-
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
   const { code, codeVerifier } = req.body;
@@ -58,7 +75,7 @@ module.exports = async (req, res) => {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
         grant_type: 'authorization_code',
-        code: code,
+        code,
         redirect_uri: redirectUri,
         client_id: clientId,
         code_verifier: codeVerifier,
