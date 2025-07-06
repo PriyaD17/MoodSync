@@ -1,53 +1,25 @@
+// src/components/ResultsView.jsx
 import React from 'react';
-import { Radar } from 'react-chartjs-2';
-import { Chart, RadialLinearScale, PointElement, LineElement, Filler, Tooltip } from 'chart.js';
-import './ResultsView.css';
-
-Chart.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip);
+import './ResultsView.css'; // We will add new styles to this file
 
 const ResultsView = ({ analysis, error, onTryAgain }) => {
-  const chartData = {
-    labels: ['Positivity (Valence)', 'Intensity (Energy)'],
-    datasets: [{
-      label: 'Mood Analysis',
-      data: [analysis.avgValence, analysis.avgEnergy],
-      fill: true,
-      backgroundColor: 'rgba(29, 185, 84, 0.2)',
-      borderColor: 'rgb(29, 185, 84)',
-      pointBackgroundColor: 'rgb(29, 185, 84)',
-      pointBorderColor: '#fff',
-      pointHoverBackgroundColor: '#fff',
-      pointHoverBorderColor: 'rgb(29, 185, 84)'
-    }]
-  };
-  
-  const chartOptions = {
-    elements: { line: { borderWidth: 3 } },
-    scales: {
-      r: {
-        angleLines: { color: 'rgba(255, 255, 255, 0.2)' },
-        grid: { color: 'rgba(255, 255, 255, 0.2)' },
-        pointLabels: { display: !error, color: '#ffffff', font: { size: 14 } },
-        ticks: { display: false, stepSize: 0.25 },
-        min: 0,
-        max: 1
-      }
-    },
-    plugins: { legend: { display: false } }
-  };
-
   return (
     <div className="results-view">
       <div className="card">
-        <h1>{error ? "Oops!" : "Recent Listening Analysis"}</h1>
+        <h1>{error ? "Oops!" : "Your AI-Powered Mood Analysis"}</h1>
         {error ? (
           <p className="error-message">{error}</p>
         ) : (
           <>
-            <p>Predominant Mood Profile:</p>
-            <strong>{analysis.moodDescription}</strong>
-            <div className="chart-container">
-              <Radar data={chartData} options={chartOptions} />
+            <p>Overall Mood</p>
+            <strong>{analysis.overallMood}</strong>
+            
+            <p className="description">{analysis.shortDescription}</p>
+
+            <div className="keywords-container">
+              {analysis.keywords.map((keyword, index) => (
+                <span key={index} className="keyword-pill">{keyword}</span>
+              ))}
             </div>
           </>
         )}
