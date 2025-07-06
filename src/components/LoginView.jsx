@@ -1,6 +1,6 @@
 import React from 'react';
 import './LoginView.css';
-import { generateCodeVerifier, generateCodeChallenge } from '../spotifyAuth';
+import { generateCodeVerifier, generateCodeChallenge } from '../spotifyAuth.cjs';
 
 const CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
 const REDIRECT_URI = 'https://mood-sync-three.vercel.app/callback'; 
