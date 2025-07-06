@@ -65,3 +65,27 @@
     margin: 20px 0;
     line-height: 1.5;
 }
+
+.description {
+    font-size: 1.1em;
+    line-height: 1.5;
+    margin: 25px 0;
+    color: #c7c7c7;
+  }
+  
+  .keywords-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  
+  .keyword-pill {
+    background-color: #3e3e3e;
+    color: #e0e0e0;
+    padding: 8px 15px;
+    border-radius: 500px;
+    font-size: 0.9em;
+    font-weight: 500;
+  }
